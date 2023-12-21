@@ -1,2 +1,4 @@
-# advent_of_code
- my solutions to advent of code
+# Advent Of Code
+My solutions for Advent of Code and the Language I used:
+
+- 2023: TypeScript
