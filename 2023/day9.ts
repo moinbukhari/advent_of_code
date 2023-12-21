@@ -1,6 +1,9 @@
 import fs from "fs";
 
-const temp = `18 23 28 33 38 43 48 53 58 63 68 73 78 83 88 93 98 103 108 113 118`;
+const temp = `0 3 6 9 12 15
+1 3 6 10 15 21
+10 13 16 21 30 45`;
+
 function getDifferenceArray(seq: number[]): number[] {
   let difArr: number[] = [];
   if (seq.length > 1) {
@@ -37,6 +40,7 @@ function getNextNum(startingSeq: number[]): number {
   nextNum = nestedSeq.reduce((acc, arr) => {
     return acc + arr[arr.length - 1];
   }, 0);
+
   return nextNum;
 }
 
@@ -50,10 +54,9 @@ const lines = data.split(/\n/).map((line) => {
 let nextNumArr: number[] = [];
 
 lines.forEach((line) => {
-  nextNumArr.push(getNextNum(line));
+  nextNumArr.push(getNextNum(line.reverse()));
 });
-console.log(nextNumArr.length);
-console.log(lines.length);
+console.log(nextNumArr);
 console.log(
   nextNumArr.reduce((acc, c) => {
     return acc + c;
