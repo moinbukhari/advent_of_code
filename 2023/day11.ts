@@ -21,9 +21,37 @@ function getTransposedArray(arr: string[][]): string[][] {
   }
   return transposedArr;
 }
+function getGalaxyCords(arr: string[][]): [string[][], number[][]] {
+  let galaxyCordinates: number[][] = [];
+  let galaxyCount = 0;
+  const newArr = arr.map((row, i) => {
+    return row.map((tile, j) => {
+      if (tile === "#") {
+        galaxyCount++;
+        galaxyCordinates.push([i, j]);
+        return tile;
+      } else {
+        return tile;
+      }
+    });
+  });
+
+  return [newArr, galaxyCordinates];
+}
 
 const data = fs.readFileSync("day11.txt", "utf8");
-const lines = data.split(/\n/).map((line) => line.split(""));
+let lines = data.split(/\n/).map((line) => line.split(""));
+let galaxyCordinatesBefore: number[][] = [];
+[lines, galaxyCordinatesBefore] = getGalaxyCords(lines);
+
+const shortestDistancesBefore: number[] = [];
+for (let i = 0; i < galaxyCordinatesBefore.length; i++) {
+  for (let j = i + 1; j < galaxyCordinatesBefore.length; j++) {
+    const yDiff = galaxyCordinatesBefore[j][0] - galaxyCordinatesBefore[i][0];
+    const xDiff = galaxyCordinatesBefore[j][1] - galaxyCordinatesBefore[i][1];
+    shortestDistancesBefore.push(Math.abs(xDiff) + Math.abs(yDiff));
+  }
+}
 
 //Expand Rows
 let width = lines[0].length;
@@ -40,6 +68,7 @@ emptyRows.forEach((rowIndex, i) => {
   lines.splice(rowIndex + 1 + i, 0, expandedRow);
 });
 
+///expand cols
 let height = lines.length;
 const emptyCols: number[] = [];
 const expandedCol = Array(height).fill(".");
@@ -56,36 +85,37 @@ emptyCols.forEach((colIndex, i) => {
 });
 
 let expandedGrid: string[][] = getTransposedArray(transposedLines);
+
+let galaxyCordinatesAfter: number[][] = [];
+[expandedGrid, galaxyCordinatesAfter] = getGalaxyCords(expandedGrid);
+
+const shortestDistancesAfter: number[] = [];
+for (let i = 0; i < galaxyCordinatesAfter.length; i++) {
+  for (let j = i + 1; j < galaxyCordinatesAfter.length; j++) {
+    const yDiff = galaxyCordinatesAfter[j][0] - galaxyCordinatesAfter[i][0];
+    const xDiff = galaxyCordinatesAfter[j][1] - galaxyCordinatesAfter[i][1];
+    shortestDistancesAfter.push(Math.abs(xDiff) + Math.abs(yDiff));
+  }
+}
+
+for (let i = 0; i < shortestDistancesBefore.length; i++) {
+  const diff = shortestDistancesAfter[i] - shortestDistancesBefore[i];
+  if (diff !== 0) {
+    const enlargedDiff = diff * (1000000 - 1);
+    shortestDistancesAfter[i] = shortestDistancesBefore[i] + enlargedDiff;
+  }
+}
+
 fs.writeFileSync(
   "output11.txt",
   expandedGrid.map((row) => row.join("")).join("\n")
 );
-let galaxyCordinates: number[][] = [];
-let galaxyCount = 0;
 
-expandedGrid = expandedGrid.map((row, i) => {
-  return row.map((tile, j) => {
-    if (tile === "#") {
-      galaxyCount++;
-      galaxyCordinates.push([i, j]);
-      return galaxyCount.toString();
-    } else {
-      return tile;
-    }
-  });
-});
-
-const shortestDistances: number[] = [];
-for (let i = 0; i < galaxyCordinates.length; i++) {
-  for (let j = i + 1; j < galaxyCordinates.length; j++) {
-    const yDiff = galaxyCordinates[j][0] - galaxyCordinates[i][0];
-    const xDiff = galaxyCordinates[j][1] - galaxyCordinates[i][1];
-    shortestDistances.push(Math.abs(xDiff) + Math.abs(yDiff));
-  }
-}
-
-console.log(emptyRows);
-console.log(emptyCols);
-console.log(galaxyCordinates);
-console.log(shortestDistances);
-console.log(shortestDistances.reduce((acc, curr) => acc + curr, 0));
+// console.log(emptyRows);
+// console.log(emptyCols);
+// console.log(galaxyCordinatesBefore);
+// console.log(shortestDistancesBefore);
+console.log(shortestDistancesBefore.reduce((acc, curr) => acc + curr, 0));
+// console.log(galaxyCordinatesAfter);
+// console.log(shortestDistancesAfter);
+console.log(shortestDistancesAfter.reduce((acc, curr) => acc + curr, 0));
