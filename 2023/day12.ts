@@ -6,83 +6,95 @@ const temp = `???.### 1,1,3
 ????.#...#... 4,1,1
 ????.######..#####. 1,6,5
 ?###???????? 3,2,1`;
-function getPermutations(input: string): string[] {
-  // Base case, if string is empty
-  if (input.length === 0) return [""];
 
-  // If string has only one character
-  if (input.length === 1) return [input];
+const cache: { [key: string]: number } = {};
 
-  const permutations: string[] = [];
+function getValidCombos(record: string[], groups: number[]): number {
+  const key = `${record.join("")}-${groups.join(",")}`;
 
-  for (let i = 0; i < input.length; i++) {
-    const char = input[i];
+  if (cache[key] !== undefined) {
+    return cache[key];
+  }
 
-    // Skip if character is already used
-    if (input.indexOf(char) != i) continue;
-
-    const remainingChars = input.slice(0, i) + input.slice(i + 1, input.length);
-
-    // Recurse on the sub-problem, and add each solution to the results
-    for (let perm of getPermutations(remainingChars)) {
-      permutations.push(char + perm);
+  if (groups.length === 0) {
+    if (!record.includes("#")) {
+      return 1;
+    } else {
+      return 0;
     }
   }
 
-  return permutations;
-}
-function getRegex(numberFormat: number[]): RegExp {
-  let minPattern: string[] = [];
-  for (let i = 0; i < numberFormat.length; i++) {
-    minPattern.push("#".repeat(numberFormat[i]));
+  if (record.length === 0) {
+    return 0;
   }
-  let regex = new RegExp(".*" + minPattern.join(".+") + ".*", "g");
-  return regex;
+
+  const next_char = record[0];
+  const next_group = groups[0];
+  let poss = 0;
+  function handleDamaged(): number {
+    const this_group = record.slice(0, next_group).map((char) => {
+      if (char === "?") {
+        return "#";
+      } else {
+        return char;
+      }
+    });
+
+    if (this_group.join("") !== "#".repeat(next_group)) {
+      return 0;
+    }
+
+    if (record.length === next_group) {
+      if (groups.length === 1) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }
+
+    if (record[next_group] === "." || record[next_group] === "?") {
+      return getValidCombos(record.slice(next_group + 1), groups.slice(1));
+    }
+
+    return 0;
+  }
+
+  if (next_char === "#") {
+    poss += handleDamaged();
+  } else if (next_char === ".") {
+    poss += getValidCombos(record.slice(1), groups);
+  } else if (next_char === "?") {
+    poss += getValidCombos(record.slice(1), groups) + handleDamaged();
+  }
+
+  cache[key] = poss;
+  return poss;
 }
 
 let conditionRecords: string[][] = [];
 let numberRecords: number[][] = [];
 
 const data = fs.readFileSync("day12.txt", "utf8");
-const lines = data.split(/\n/).map((line) => {
+data.split(/\n/).map((line) => {
   const records = line.split(" ");
   conditionRecords.push(records[0].split(""));
   numberRecords.push(records[1].split(",").map((el) => Number(el)));
 });
 
-let total = 0;
-conditionRecords.forEach((conditionRecord, index) => {
-  const numberRecord = numberRecords[index];
-  const totalDamaged: number = numberRecord.reduce((acc, curr) => acc + curr);
-  const questionMarkIndexes: number[] = [];
-  const fixedIndexes: number[] = [];
-  const damagedIndexes: number[] = [];
-  conditionRecord.forEach((char, index) => {
-    if (char === "?") {
-      questionMarkIndexes.push(index);
-    } else if (char === ".") {
-      fixedIndexes.push(index);
-    } else if (char === "#") {
-      damagedIndexes.push(index);
-    }
-  });
-  let remainingDamaged = totalDamaged - damagedIndexes.length;
-  let remainingFixed = questionMarkIndexes.length - remainingDamaged;
+const arrangements: number[] = [];
+for (let i = 0; i < conditionRecords.length; i++) {
+  const conditionRecord = (conditionRecords[i].join("") + "?")
+    .repeat(5)
+    .slice(0, -1)
+    .split("");
+  const numberRecord = (numberRecords[i].join(",") + ",")
+    .repeat(5)
+    .slice(0, -1)
+    .split(",")
+    .map((el) => Number(el));
+  const totalValidCombos = getValidCombos(conditionRecord, numberRecord);
 
-  const pattern = "#".repeat(remainingDamaged) + ".".repeat(remainingFixed);
+  arrangements.push(totalValidCombos);
+}
 
-  const allPermutations = getPermutations(pattern);
-  const matchRegex = getRegex(numberRecord);
-
-  for (let i = 0; i < allPermutations.length; i++) {
-    let amendedRecord = conditionRecord;
-    for (let j = 0; j < questionMarkIndexes.length; j++) {
-      amendedRecord[questionMarkIndexes[j]] = allPermutations[i][j];
-    }
-    if (amendedRecord.join("").match(matchRegex)) {
-      total++;
-    }
-  }
-});
-
-console.log(total);
+console.log(arrangements.reduce((acc, curr) => acc + curr));
