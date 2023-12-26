@@ -36,9 +36,25 @@ function findMirrorIndex(pattern: string[]): number {
       above = above.slice(above.length - below.length);
     }
 
-    if (above.join("") === below.reverse().join("")) {
+    let possibleSmudges = 0;
+    const revBelow = below.reverse().join("").split("");
+
+    above
+      .join("")
+      .split("")
+      .forEach((aboveChar, index) => {
+        if (aboveChar !== revBelow[index]) {
+          possibleSmudges++;
+        }
+      });
+    if (possibleSmudges === 1) {
       return i;
     }
+
+    //part1
+    // if (above.join("") === below.reverse().join("")) {
+    //   return i;
+    // }
   }
 
   return -1;
@@ -65,5 +81,5 @@ patterns.forEach((p) => {
     }
   }
 });
-
+console.log(scores);
 console.log(scores.reduce((acc, curr) => acc + curr));
